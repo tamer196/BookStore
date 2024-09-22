@@ -15,6 +15,7 @@ using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Acme.BookStore.Books;
+using Acme.BookStore.Authors;
 
 namespace Acme.BookStore.EntityFrameworkCore;
 
@@ -26,6 +27,7 @@ public class BookStoreDbContext : AbpDbContext<BookStoreDbContext>, ITenantManag
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
     public DbSet<Book> Books { get; set; }
+    public DbSet<Author> Authors { get; set; }
     #region Entities from the modules
 
     /* Notice: We only implemented IIdentityProDbContext and ISaasDbContext
@@ -78,12 +80,27 @@ public class BookStoreDbContext : AbpDbContext<BookStoreDbContext>, ITenantManag
         builder.ConfigureBlobStoring();
         builder.Entity<Book>(b =>
         {
-            b.ToTable(BookStoreConsts.DbTablePrefix + "Books",
-                      BookStoreConsts.DbSchema);
-            b.ConfigureByConvention(); // auto configure for the base class props
+            b.ToTable(BookStoreConsts.DbTablePrefix + "Books", BookStoreConsts.DbSchema);
+            b.ConfigureByConvention();  // Auto configure for the base class properties
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+
+            // Add the mapping for the relation
+            b.HasOne<Author>().WithMany().HasForeignKey(x => x.AuthorId).IsRequired();
         });
 
+
+        builder.Entity<Author>(b =>
+        {
+            b.ToTable(BookStoreConsts.DbTablePrefix + "Authors", BookStoreConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(AuthorConsts.MaxNameLength);
+
+            b.HasIndex(x => x.Name);
+        });
 
         /* Configure your own tables/entities inside here */
 
